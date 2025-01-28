@@ -1,0 +1,16 @@
+@WindowsAutomationPlugin_HostAddress = http://localhost:5224
+
+GET {{WindowsAutomationPlugin_HostAddress}}/status/
+Accept: application/json
+
+###
+
+GET {{WindowsAutomationPlugin_HostAddress}}/action/
+Accept: application/json
+
+###
+
+POST {{WindowsAutomationPlugin_HostAddress}}/search/
+Accept: application/json
+
+###
