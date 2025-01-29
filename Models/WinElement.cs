@@ -6,6 +6,7 @@ namespace WindowsAutomationPlugin.Models
     {
         public By ByLocator { get; set; }
         public string LocatorValue { get; set; }
+        public Object NativeElement { get; set; }
 
         public WinElement()
         {

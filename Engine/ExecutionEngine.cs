@@ -2,6 +2,7 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Input;
+using FlaUI.Core.Tools;
 using FlaUI.UIA3;
 using WindowsAutomationPlugin.Models;
 using WindowsAutomationPlugin.Models.Enums;
@@ -10,16 +11,25 @@ namespace WindowsAutomationPlugin.Engine
 {
     public class ExecutionEngine
     {
-        private UIA3Automation _automation = new UIA3Automation();
         private Application? _runningApp;
         private FlaUI.Core.AutomationElements.Window? _mainWindow;
         private FlaUI.Core.AutomationElements.Window? _activeWindow;
-        private ConditionFactory _conditionFactory = new ConditionFactory(new UIA3PropertyLibrary());
+        private readonly ConditionFactory _conditionFactory = new(new UIA3PropertyLibrary());
         public ExecutionEngine() { }
 
         public ResponseLog Launch(string path)
         {
             _runningApp = Application.Launch(path);
+            UIA3Automation _automation = new();
+            _mainWindow = Retry.WhileNull(() => _runningApp.GetMainWindow(_automation), TimeSpan.FromSeconds(10)).Result;
+            _activeWindow = _mainWindow;
+            return new ResponseLog();
+        }
+
+        public ResponseLog LaunchStoreApp(string name)
+        {
+            _runningApp = Application.LaunchStoreApp(name);
+            UIA3Automation _automation = new();
             _mainWindow = _runningApp.GetMainWindow(_automation);
             _activeWindow = _mainWindow;
             return new ResponseLog();
@@ -28,6 +38,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog AttachToProgram(string path)
         {
             _runningApp = Application.Attach(path);
+            UIA3Automation _automation = new();
             _mainWindow = _runningApp.GetMainWindow(_automation);
             _activeWindow = _mainWindow;
             return new ResponseLog();
@@ -69,7 +80,7 @@ namespace WindowsAutomationPlugin.Engine
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
-            findElement(element).Click();
+            FindElement(element).Click();
             return new ResponseLog();
         }
 
@@ -79,7 +90,7 @@ namespace WindowsAutomationPlugin.Engine
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
-            findElement(element).DoubleClick();
+            FindElement(element).DoubleClick();
             return new ResponseLog();
         }
 
@@ -89,7 +100,7 @@ namespace WindowsAutomationPlugin.Engine
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
-            findElement(element).RightClick();
+            FindElement(element).RightClick();
             return new ResponseLog();
         }
 
@@ -99,7 +110,7 @@ namespace WindowsAutomationPlugin.Engine
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
-            findElement(element).RightDoubleClick();
+            FindElement(element).RightDoubleClick();
             return new ResponseLog();
         }
 
@@ -119,7 +130,7 @@ namespace WindowsAutomationPlugin.Engine
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
-            findElement(element).AsTextBox().Enter(value);
+            FindElement(element).AsTextBox().Enter(value);
             return new ResponseLog();
         }
 
@@ -141,15 +152,39 @@ namespace WindowsAutomationPlugin.Engine
             return new ResponseLog();
         }
 
-        public AutomationElement? findElement(WinElement winElement)
+        public ResponseLog Wait(int seconds)
+        {
+            Thread.Sleep(seconds * 1000);
+            return new ResponseLog();
+        }
+
+        public ResponseLog GetElement(WinElement element)
+        {
+            element.NativeElement = FindElement(element);
+            return new ResponseLog().setElement(element);
+        }
+
+        public ResponseLog Highlight(WinElement element)
+        {
+            FindElement(element).DrawHighlight();
+            return new ResponseLog();
+        }
+
+        public AutomationElement? FindElement(WinElement winElement)
         {
             switch (winElement.ByLocator)
             {
                 case By.Name:
-                    return _activeWindow.FindFirstNested(_conditionFactory.ByName(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByName(winElement.LocatorValue));
                 case By.ClassName:
-                    return _activeWindow.FindFirstNested(_conditionFactory.ByClassName(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByClassName(winElement.LocatorValue));
                 case By.AutomationId:
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByAutomationId(winElement.LocatorValue));
+                case By.Value:
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByValue(winElement.LocatorValue));
+                case By.Text:
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByText(winElement.LocatorValue));
+                case By.Xpath:
                     return _activeWindow.FindFirstByXPath(winElement.LocatorValue);
                 default: return null;
             }

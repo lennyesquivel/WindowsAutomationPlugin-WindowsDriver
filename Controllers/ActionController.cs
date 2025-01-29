@@ -31,6 +31,9 @@ namespace WindowsAutomationPlugin.Controllers
                 case Actions.Launch:
                     actionResult = _executionEngine.Launch(actionRequest.ActionValue);
                     break;
+                case Actions.LaunchStoreApp:
+                    actionResult = _executionEngine.LaunchStoreApp(actionRequest.ActionValue);
+                    break;
                 case Actions.AttachToProgram:
                     actionResult = _executionEngine.AttachToProgram(actionRequest.ActionValue);
                     break;
@@ -65,12 +68,25 @@ namespace WindowsAutomationPlugin.Controllers
                     _executionEngine.TakeScreenshot();
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
                     break;
+                case Actions.Wait:
+                    actionResult = _executionEngine.Wait(int.Parse(actionRequest.ActionValue));
+                    break;
+                case Actions.Highlight:
+                    actionResult = _executionEngine.Highlight(buildWinElement(actionRequest));
+                    break;
                 default:
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
                     break;
 
             }
             return CreatedAtAction("ExecuteAction", actionResult);
+        }
+
+        [HttpGet("element")]
+        public IEnumerable<WinElement> GetElement(string locatorType, string locatorValue)
+        {
+            Enum.TryParse(locatorType, out By by);
+            yield return new WinElement(by, locatorValue);
         }
 
         private WinElement buildWinElement(ActionRequest actionRequest)
