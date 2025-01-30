@@ -1,4 +1,5 @@
-﻿using FlaUI.Core.AutomationElements;
+﻿using System.Text.Json.Nodes;
+using FlaUI.Core.AutomationElements;
 using Microsoft.AspNetCore.Mvc;
 using WindowsAutomationPlugin.Engine;
 using WindowsAutomationPlugin.Models;
@@ -20,15 +21,16 @@ namespace WindowsAutomationPlugin.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post([FromBody] ActionRequest actionRequest)
+        public IActionResult Post([FromBody] JsonObject requestBody)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || requestBody == null)
             {
                 _logger.LogError("Invalid Request.\n{0}", ModelState);
                 return BadRequest(ModelState);
             }
-            ResponseLog actionResult = null;
-            _logger.LogInformation("Received action request: {0}", actionRequest);
+            ActionRequest actionRequest = new(requestBody);
+            ResponseLog? actionResult = null;
+            _logger.LogInformation("Received action request: {0}", actionRequest.ToString());
             switch(actionRequest.Action)
             {
                 case Actions.Launch:
