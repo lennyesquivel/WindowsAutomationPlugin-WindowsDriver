@@ -10,7 +10,7 @@ Accept: application/json
 
 ###
 
-POST {{WindowsAutomationPlugin_HostAddress}}/search/
+POST {{WindowsAutomationPlugin_HostAddress}}/action/
 Accept: application/json
 
 ###

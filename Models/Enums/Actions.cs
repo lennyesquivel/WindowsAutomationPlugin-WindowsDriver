@@ -3,6 +3,7 @@
     public enum Actions
     {
         Launch,
+        LaunchStoreApp,
         AttachToProgram,
         Click,
         DoubleClick,
@@ -14,6 +15,9 @@
         Type,
         TypeOnTextBox,
         Close,
-        TakeScreenshot
+        TakeScreenshot,
+        Wait,
+        GetElement,
+        Highlight
     }
 }
