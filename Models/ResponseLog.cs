@@ -6,6 +6,7 @@ namespace WindowsAutomationPlugin.Models
     {
         private Response _response { get; set; }
         private WinElement _element { get; set; }
+        private Object _data { get; set; }
 
         public ResponseLog()
         {
@@ -17,15 +18,21 @@ namespace WindowsAutomationPlugin.Models
             _response = initResponse;
         }
 
-        public ResponseLog setElement(WinElement element)
+        public ResponseLog SetElement(WinElement element)
         {
             _element = element;
             return this;
         }
 
-        public WinElement getElement()
+        public WinElement GetElement()
         {
             return _element;
+        }
+
+        public ResponseLog SetData(Object setData)
+        {
+            _data = setData;
+            return this;
         }
     }
 }
