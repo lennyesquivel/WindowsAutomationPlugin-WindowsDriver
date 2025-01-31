@@ -12,26 +12,40 @@ namespace WindowsAutomationPlugin.Controllers
     public class ActionController : ControllerBase
     {
         private readonly ILogger<ActionController> _logger;
-        private readonly ExecutionEngine _executionEngine;
+        private static ExecutionEngine cache;
+        private static object cacheLock = new object();
+        private static ExecutionEngine _executionEngine
+        {
+            get
+            {
+                lock (cacheLock)
+                {
+                    if (cache == null)
+                    {
+                        cache = new ExecutionEngine();
+                    }
+                    return cache;
+                }
+            }
+        }
 
         public ActionController(ILogger<ActionController> logger)
         {
             _logger = logger;
-            _executionEngine = new ExecutionEngine();
         }
 
         [HttpPost]
-        public IActionResult Post([FromBody] JsonObject requestBody)
+        public ResponseLog Post([FromBody] JsonObject requestBody)
         {
             if (!ModelState.IsValid || requestBody == null)
             {
                 _logger.LogError("Invalid Request.\n{0}", ModelState);
-                return BadRequest(ModelState);
+                return new ResponseLog(Responses.BadRequest);
             }
             ActionRequest actionRequest = new(requestBody);
             ResponseLog? actionResult = null;
             _logger.LogInformation("Received action request: {0}", actionRequest.ToString());
-            switch(actionRequest.Action)
+            switch (actionRequest.Action)
             {
                 case Actions.Launch:
                     actionResult = _executionEngine.Launch(actionRequest.ActionValue);
@@ -70,8 +84,7 @@ namespace WindowsAutomationPlugin.Controllers
                     actionResult = _executionEngine.Close();
                     break;
                 case Actions.TakeScreenshot:
-                    _executionEngine.TakeScreenshot();
-                    actionResult = new ResponseLog(Responses.ActionNotImplemented);
+                    actionResult = _executionEngine.TakeScreenshot();
                     break;
                 case Actions.Wait:
                     actionResult = _executionEngine.Wait(int.Parse(actionRequest.ActionValue));
@@ -84,15 +97,15 @@ namespace WindowsAutomationPlugin.Controllers
                     break;
 
             }
-            return CreatedAtAction("ExecuteAction", actionResult);
+            return actionResult;
         }
 
         [HttpGet("element")]
-        public IEnumerable<WinElement> GetElement(string locatorType, string locatorValue)
+        public WinElement GetElement(string locatorType, string locatorValue)
         {
             _logger.LogInformation("Received get element request: {0}, {1}", locatorType, locatorValue);
             Enum.TryParse(locatorType, out By by);
-            yield return new WinElement(by, locatorValue);
+            return new WinElement(by, locatorValue);
         }
 
         [HttpGet("elements")]

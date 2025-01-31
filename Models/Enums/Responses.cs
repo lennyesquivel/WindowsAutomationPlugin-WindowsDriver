@@ -10,5 +10,6 @@
         public static Response InternalError = new Response("ERR001", 500, "Internal Error");
         public static Response WindowNotFound = new Response("WNF001", 404, "Window element not attached, launch first or attach to running program");
         public static Response ActionNotImplemented = new Response("ANI001", 501, "Action not implemented");
+        public static Response BadRequest = new Response("REQ001", 502, "Bad Request");
     }
 }

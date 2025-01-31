@@ -1,4 +1,5 @@
-﻿using FlaUI.Core;
+﻿using System.Windows.Forms;
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
 using FlaUI.Core.Conditions;
@@ -13,7 +14,7 @@ namespace WindowsAutomationPlugin.Engine
     public class ExecutionEngine
     {
         //private ILogger<ExecutionEngine> _logger = new();
-        private Application? _runningApp;
+        private FlaUI.Core.Application? _runningApp;
         private FlaUI.Core.AutomationElements.Window? _mainWindow;
         private FlaUI.Core.AutomationElements.Window? _activeWindow;
         private readonly ConditionFactory _conditionFactory = new(new UIA3PropertyLibrary());
@@ -22,7 +23,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog Launch(string path)
         {
             //_logger.LogInformation("Launching app: " + path);
-            _runningApp = Application.Launch(path);
+            _runningApp = FlaUI.Core.Application.Launch(path);
             UIA3Automation _automation = new();
             _mainWindow = Retry.WhileNull(() => _runningApp.GetMainWindow(_automation), TimeSpan.FromSeconds(10)).Result;
             _activeWindow = _mainWindow;
@@ -32,9 +33,9 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog LaunchStoreApp(string aumid)
         {
             //_logger.LogInformation("Launching StoreApp: " +  aumid);
-            _runningApp = Application.LaunchStoreApp(aumid);
+            _runningApp = FlaUI.Core.Application.LaunchStoreApp(aumid);
             UIA3Automation _automation = new();
-            _mainWindow = _runningApp.GetMainWindow(_automation);
+            _mainWindow = Retry.WhileNull(() => _runningApp.GetMainWindow(_automation), TimeSpan.FromSeconds(10)).Result;
             _activeWindow = _mainWindow;
             return new ResponseLog();
         }
@@ -42,7 +43,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog AttachToProgram(string path)
         {
             //_logger.LogInformation("Attaching to running program: " + path);
-            _runningApp = Application.Attach(path);
+            _runningApp = FlaUI.Core.Application.Attach(path);
             UIA3Automation _automation = new();
             _mainWindow = _runningApp.GetMainWindow(_automation);
             _activeWindow = _mainWindow;
@@ -52,7 +53,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog Click()
         {
             //_logger.LogInformation("Performing click.");
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -63,7 +64,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog DoubleClick()
         {
             //_logger.LogInformation("Performing double click.");
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -74,7 +75,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog RightClick()
         {
             //_logger.LogInformation("Performing right click");
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -85,7 +86,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog ClickOnElement(WinElement element)
         {
             //_logger.LogInformation("Performing click on element: " + element.ToString());
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -96,7 +97,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog DoubleClickOnElement(WinElement element)
         {
             //_logger.LogInformation("Performing double click on element: " + element.ToString());
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -107,7 +108,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog RightClickOnElement(WinElement element)
         {
             //_logger.LogInformation("Performing right click on element: " + element.ToString());
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -118,7 +119,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog RightDoubleClickOnElement(WinElement element)
         {
             //_logger.LogInformation("Performing right double click on element: " + element.ToString());
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -129,7 +130,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog Type(string value)
         {
             //_logger.LogInformation("Performing type with value: " + value);
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -140,7 +141,7 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog TypeOnTextBox(WinElement element, string value)
         {
             //_logger.LogInformation("Performing type on textbox: " + element.ToString());
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
@@ -151,11 +152,12 @@ namespace WindowsAutomationPlugin.Engine
         public ResponseLog Close()
         {
             //_logger.LogInformation("Closing running application.");
-            if (_mainWindow == null)
+            if (_activeWindow == null)
             {
                 return new ResponseLog(Responses.WindowNotFound);
             }
             _runningApp.Close();
+            _activeWindow = null;
             _mainWindow = null;
             _runningApp = null;
             return new ResponseLog();
