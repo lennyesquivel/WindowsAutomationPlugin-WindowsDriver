@@ -1,4 +1,5 @@
 ﻿using FlaUI.Core.AutomationElements;
+using FlaUI.UIA3.Converters;
 using WindowsAutomationPlugin.Models.Enums;
 
 namespace WindowsAutomationPlugin.Models
@@ -7,7 +8,7 @@ namespace WindowsAutomationPlugin.Models
     {
         public By ByLocator { get; set; }
         public string LocatorValue { get; set; }
-        public Object NativeElement { get; set; }
+        public string Name { get; set; }
 
         public WinElement()
         {
@@ -21,11 +22,18 @@ namespace WindowsAutomationPlugin.Models
             this.LocatorValue = initLocatorValue;
         }
 
-        public WinElement(ActionRequest actionRequest, AutomationElement element)
+        public WinElement(ActionRequest actionRequest)
         {
             this.ByLocator = actionRequest.By;
             this.LocatorValue = actionRequest.LocatorValue;
-            this.NativeElement = element;
         }
+
+        public WinElement(By initBy, string initLocatorValue, AutomationElement nativeElement)
+        {
+            this.ByLocator = initBy;
+            this.LocatorValue = initLocatorValue;
+            this.Name = nativeElement.Name;
+        }
+
     }
 }

@@ -18,6 +18,7 @@
         TakeScreenshot,
         Wait,
         GetElement,
-        Highlight
+        Highlight,
+        TypeSimultaneously
     }
 }

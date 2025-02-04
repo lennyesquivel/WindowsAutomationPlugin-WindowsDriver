@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using FlaUI.Core.WindowsAPI;
 using WindowsAutomationPlugin.Models.Enums;
 
 namespace WindowsAutomationPlugin.Models
@@ -9,6 +10,7 @@ namespace WindowsAutomationPlugin.Models
         public string ActionValue;
         public By By;
         public string LocatorValue;
+        public VirtualKeyShort[] Keys;
         public ActionRequest() { }
         public ActionRequest(JsonObject json)
         {
@@ -17,6 +19,7 @@ namespace WindowsAutomationPlugin.Models
             this.ActionValue = req.ActionValue;
             this.By = req.By;
             this.LocatorValue = req.LocatorValue;
+            this.Keys = req.Keys;
         }
         public string ToString()
         {

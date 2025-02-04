@@ -39,12 +39,18 @@ namespace WindowsAutomationPlugin.Controllers
         {
             if (!ModelState.IsValid || requestBody == null)
             {
-                _logger.LogError("Invalid Request.\n{0}", ModelState);
+                logMessage("Error", String.Format("Invalid Request.\n{0}", ModelState));
                 return new ResponseLog(Responses.BadRequest);
             }
+            Console.WriteLine(requestBody.ToJsonString());
             ActionRequest actionRequest = new(requestBody);
+            return HandleActionPost(actionRequest);
+        }
+
+        public ResponseLog HandleActionPost(ActionRequest actionRequest)
+        {
             ResponseLog? actionResult = null;
-            _logger.LogInformation("Received action request: {0}", actionRequest.ToString());
+            logMessage("Info", String.Format("Received action request: {0}", actionRequest.ToString()));
             switch (actionRequest.Action)
             {
                 case Actions.Launch:
@@ -92,6 +98,9 @@ namespace WindowsAutomationPlugin.Controllers
                 case Actions.Highlight:
                     actionResult = _executionEngine.Highlight(buildWinElement(actionRequest));
                     break;
+                case Actions.TypeSimultaneously:
+                    actionResult = _executionEngine.TypeSimultaneously(actionRequest.Keys);
+                    break;
                 default:
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
                     break;
@@ -103,15 +112,17 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpGet("element")]
         public WinElement GetElement(string locatorType, string locatorValue)
         {
-            _logger.LogInformation("Received get element request: {0}, {1}", locatorType, locatorValue);
+            logMessage("Info", String.Format("Received get element request: {0}, {1}", locatorType, locatorValue));
             Enum.TryParse(locatorType, out By by);
-            return new WinElement(by, locatorValue);
+            //TO-DO get native element properties and write to winelement class
+            AutomationElement element = _executionEngine.FindElementByValues(by, locatorValue);
+            return new WinElement(by, locatorValue, element);
         }
 
         [HttpGet("elements")]
         public List<WinElement> GetElements(ActionRequest actionRequest)
         {
-            _logger.LogInformation("Received get element request: {0}", actionRequest);
+            logMessage("Info", String.Format("Received get element request: {0}", actionRequest));
             return findElements(actionRequest);
         }
 
@@ -126,9 +137,39 @@ namespace WindowsAutomationPlugin.Controllers
             List<WinElement> winElements = new List<WinElement>();
             foreach (AutomationElement element in elements)
             {
-                winElements.Add(new WinElement(actionRequest, element));
+                //TO-DO get native element properties and write to winelement class
+                winElements.Add(new WinElement(actionRequest));
             }
             return winElements;
+        }
+
+        private void logMessage(string type, string message)
+        {
+            if (_logger != null)
+            {
+                switch(type)
+                {
+                    case "Error":
+                        _logger.LogError(message);
+                        break;
+                    case "Info":
+                    default:
+                        _logger.LogInformation(message);
+                        break;
+                }
+            } else
+            {
+                switch (type)
+                {
+                    case "Error":
+                        Console.WriteLine("Error: " + message);
+                        break;
+                    case "Info":
+                    default:
+                        Console.WriteLine("Info: " + message);
+                        break;
+                }
+            }
         }
     }
 }
