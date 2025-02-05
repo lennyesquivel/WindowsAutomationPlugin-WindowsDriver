@@ -9,6 +9,8 @@ namespace WindowsAutomationPlugin.Models
         public By ByLocator { get; set; }
         public string LocatorValue { get; set; }
         public string Name { get; set; }
+        public int PositionX { get; set; }
+        public int PositionY { get; set; }
 
         public WinElement()
         {
@@ -33,6 +35,8 @@ namespace WindowsAutomationPlugin.Models
             this.ByLocator = initBy;
             this.LocatorValue = initLocatorValue;
             this.Name = nativeElement.Name;
+            this.PositionX = nativeElement.BoundingRectangle.X + (nativeElement.BoundingRectangle.Width / 2);
+            this.PositionY = nativeElement.BoundingRectangle.Y + (nativeElement.BoundingRectangle.Height / 2);
         }
 
     }

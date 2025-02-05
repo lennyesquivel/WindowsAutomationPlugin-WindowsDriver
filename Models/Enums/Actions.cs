@@ -19,6 +19,7 @@
         Wait,
         GetElement,
         Highlight,
-        TypeSimultaneously
+        TypeSimultaneously,
+        MoveMouseToPosition
     }
 }

@@ -101,6 +101,12 @@ namespace WindowsAutomationPlugin.Controllers
                 case Actions.TypeSimultaneously:
                     actionResult = _executionEngine.TypeSimultaneously(actionRequest.Keys);
                     break;
+                case Actions.MoveMouseToPosition:
+                    string coords = actionRequest.ActionValue.Substring(1, actionRequest.ActionValue.Length - 2);
+                    int X = int.Parse(coords.Split(",")[0]);
+                    int Y = int.Parse(coords.Split(",")[1]);
+                    actionResult = _executionEngine.MoveMouseToPosition(X, Y);
+                    break;
                 default:
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
                     break;
@@ -116,6 +122,10 @@ namespace WindowsAutomationPlugin.Controllers
             Enum.TryParse(locatorType, out By by);
             //TO-DO get native element properties and write to winelement class
             AutomationElement element = _executionEngine.FindElementByValues(by, locatorValue);
+            if (element == null)
+            {
+                return null;
+            }
             return new WinElement(by, locatorValue, element);
         }
 

@@ -196,6 +196,12 @@ namespace WindowsAutomationPlugin.Engine
             return new ResponseLog();
         }
 
+        public ResponseLog MoveMouseToPosition(int X, int Y)
+        {
+            Mouse.MoveTo(X, Y);
+            return new ResponseLog();
+        }
+
         public AutomationElement? FindElement(WinElement winElement)
         {
             return FindElementByValues(winElement.ByLocator, winElement.LocatorValue);
