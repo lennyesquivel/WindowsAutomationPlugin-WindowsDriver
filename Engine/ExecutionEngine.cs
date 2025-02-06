@@ -1,10 +1,12 @@
-﻿using System.Windows.Forms;
+﻿using System.Configuration;
+using System.Windows.Forms;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
+using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
 using WindowsAutomationPlugin.Models;
 using WindowsAutomationPlugin.Models.Enums;
@@ -179,7 +181,6 @@ namespace WindowsAutomationPlugin.Engine
 
         public ResponseLog GetElement(WinElement element)
         {
-            element.NativeElement = FindElement(element);
             return new ResponseLog().SetElement(element);
         }
 
@@ -189,22 +190,39 @@ namespace WindowsAutomationPlugin.Engine
             return new ResponseLog();
         }
 
+        public ResponseLog TypeSimultaneously(VirtualKeyShort[] keys)
+        {
+            Keyboard.TypeSimultaneously(keys);
+            return new ResponseLog();
+        }
+
+        public ResponseLog MoveMouseToPosition(int X, int Y)
+        {
+            Mouse.MoveTo(X, Y);
+            return new ResponseLog();
+        }
+
         public AutomationElement? FindElement(WinElement winElement)
         {
-            switch (winElement.ByLocator)
+            return FindElementByValues(winElement.ByLocator, winElement.LocatorValue);
+        }
+
+        public AutomationElement? FindElementByValues(By by, string locatorValue)
+        {
+            switch (by)
             {
                 case By.Name:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByName(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByName(locatorValue));
                 case By.ClassName:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByClassName(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByClassName(locatorValue));
                 case By.AutomationId:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByAutomationId(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByAutomationId(locatorValue));
                 case By.Value:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByValue(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByValue(locatorValue));
                 case By.Text:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByText(winElement.LocatorValue));
+                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByText(locatorValue));
                 case By.Xpath:
-                    return _activeWindow.FindFirstByXPath(winElement.LocatorValue);
+                    return _activeWindow.FindFirstByXPath(locatorValue);
                 default: throw new Exception("Locating type not available or implemented");
             }
         }

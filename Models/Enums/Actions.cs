@@ -18,6 +18,8 @@
         TakeScreenshot,
         Wait,
         GetElement,
-        Highlight
+        Highlight,
+        TypeSimultaneously,
+        MoveMouseToPosition
     }
 }
