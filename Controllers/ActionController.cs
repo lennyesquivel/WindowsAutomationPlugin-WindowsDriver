@@ -34,6 +34,29 @@ namespace WindowsAutomationPlugin.Controllers
             _logger = logger;
         }
 
+        // TO-DO: Implement clientSessionId check at every request
+        private ResponseLog checkClientSessionId(String sessionIdFromReq)
+        {
+            string clientSessionId = HttpContext.Session.GetString("clientSessionId");
+            if (clientSessionId == null)
+            {
+                return new ResponseLog(Responses.SessionNotRegistered);
+            }
+            else if (clientSessionId != sessionIdFromReq)
+            {
+                return new ResponseLog(Responses.ClientIdMismatch);
+            }
+            return null;
+        }
+
+        [HttpPost("driver")]
+        public ResponseLog SetupDriver([FromBody] DriverOptions options)
+        {
+            _executionEngine.setImplicitWaitTime(options.ImplicitWaitTime);
+            Console.WriteLine(options.ToString());
+            return new ResponseLog(Responses.Success);
+        }
+
         [HttpPost]
         public ResponseLog Post([FromBody] JsonObject requestBody)
         {
@@ -42,6 +65,8 @@ namespace WindowsAutomationPlugin.Controllers
                 logMessage("Error", String.Format("Invalid Request.\n{0}", ModelState));
                 return new ResponseLog(Responses.BadRequest);
             }
+            string clientSessionId = HttpContext.Session.GetString("clientSessionId");
+            Console.WriteLine("Registered Client Session ID: " + clientSessionId);
             Console.WriteLine(requestBody.ToJsonString());
             ActionRequest actionRequest = new(requestBody);
             return HandleActionPost(actionRequest);
@@ -106,6 +131,20 @@ namespace WindowsAutomationPlugin.Controllers
                     int X = int.Parse(coords.Split(",")[0]);
                     int Y = int.Parse(coords.Split(",")[1]);
                     actionResult = _executionEngine.MoveMouseToPosition(X, Y);
+                    break;
+                case Actions.KeyDown:
+                    Enum.TryParse(actionRequest.ActionValue, out FlaUI.Core.WindowsAPI.VirtualKeyShort keyDown);
+                    actionResult = _executionEngine.KeyDown(keyDown);
+                    break;
+                case Actions.KeyUp:
+                    Enum.TryParse(actionRequest.ActionValue, out FlaUI.Core.WindowsAPI.VirtualKeyShort keyUp);
+                    actionResult = _executionEngine.KeyUp(keyUp);
+                    break;
+                case Actions.ClickAndDragToCoordinates:
+                    actionResult = _executionEngine.ClickAndDragToCoordinates();
+                    break;
+                case Actions.ClickAndDragToElement:
+                    actionResult = _executionEngine.ClickAndDragToElement(buildWinElement(actionRequest));
                     break;
                 default:
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
