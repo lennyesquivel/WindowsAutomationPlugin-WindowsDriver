@@ -15,11 +15,14 @@ namespace WindowsAutomationPlugin.Engine
 {
     public class ExecutionEngine
     {
+
         //private ILogger<ExecutionEngine> _logger = new();
         private FlaUI.Core.Application? _runningApp;
         private FlaUI.Core.AutomationElements.Window? _mainWindow;
         private FlaUI.Core.AutomationElements.Window? _activeWindow;
         private readonly ConditionFactory _conditionFactory = new(new UIA3PropertyLibrary());
+        private int implicitWaitMilis = 500;
+
         public ExecutionEngine() { }
 
         public ResponseLog Launch(string path)
@@ -202,6 +205,29 @@ namespace WindowsAutomationPlugin.Engine
             return new ResponseLog();
         }
 
+        public ResponseLog KeyDown(VirtualKeyShort key)
+        {
+            Keyboard.PressVirtualKeyCode((ushort)key);
+            return new ResponseLog();
+        }
+
+        public ResponseLog KeyUp(VirtualKeyShort key)
+        {
+            Keyboard.ReleaseVirtualKeyCode((ushort)key);
+            return new ResponseLog();
+        }
+
+        public ResponseLog ClickAndDragToCoordinates()
+        {
+            // Usage will be click on current pointer position and drag to coordinates
+            return new ResponseLog(Responses.ActionNotImplemented);
+        }
+
+        public ResponseLog ClickAndDragToElement(WinElement element)
+        {
+            return new ResponseLog(Responses.ActionNotImplemented);
+        }
+
         public AutomationElement? FindElement(WinElement winElement)
         {
             return FindElementByValues(winElement.ByLocator, winElement.LocatorValue);
@@ -212,15 +238,15 @@ namespace WindowsAutomationPlugin.Engine
             switch (by)
             {
                 case By.Name:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByName(locatorValue));
+                    return WaitForElement(() => _activeWindow.FindFirstDescendant(_conditionFactory.ByName(locatorValue)));
                 case By.ClassName:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByClassName(locatorValue));
+                    return WaitForElement(() => _activeWindow.FindFirstDescendant(_conditionFactory.ByClassName(locatorValue)));
                 case By.AutomationId:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByAutomationId(locatorValue));
+                    return WaitForElement(() => _activeWindow.FindFirstDescendant(_conditionFactory.ByAutomationId(locatorValue)));
                 case By.Value:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByValue(locatorValue));
+                    return WaitForElement(() => _activeWindow.FindFirstDescendant(_conditionFactory.ByValue(locatorValue)));
                 case By.Text:
-                    return _activeWindow.FindFirstDescendant(_conditionFactory.ByText(locatorValue));
+                    return WaitForElement(() => _activeWindow.FindFirstDescendant(_conditionFactory.ByText(locatorValue)));
                 case By.Xpath:
                     return _activeWindow.FindFirstByXPath(locatorValue);
                 default: throw new Exception("Locating type not available or implemented");
@@ -246,5 +272,25 @@ namespace WindowsAutomationPlugin.Engine
                 default: throw new Exception("Locating type not available or implemented");
             }
         }
+
+        public void setImplicitWaitTime(int milis)
+        {
+            this.implicitWaitMilis = milis;
+        }
+
+        private T WaitForElement<T>(Func<T> getter)
+        {
+            var retry = Retry.WhileNull<T>(
+                () => getter(),
+                TimeSpan.FromMilliseconds(implicitWaitMilis));
+
+            if (!retry.Success)
+            {
+                throw new Exception("Element could not be found");
+            }
+
+            return retry.Result;
+        }
+
     }
 }
