@@ -141,7 +141,10 @@ namespace WindowsAutomationPlugin.Controllers
                     actionResult = _executionEngine.KeyUp(keyUp);
                     break;
                 case Actions.ClickAndDragToCoordinates:
-                    actionResult = _executionEngine.ClickAndDragToCoordinates();
+                    string dragDropCoords = actionRequest.ActionValue.Substring(1, actionRequest.ActionValue.Length - 2);
+                    int dX = int.Parse(dragDropCoords.Split(",")[0]);
+                    int dY = int.Parse(dragDropCoords.Split(",")[1]);
+                    actionResult = _executionEngine.ClickAndDragToCoordinates(dX, dY);
                     break;
                 case Actions.ClickAndDragToElement:
                     actionResult = _executionEngine.ClickAndDragToElement(buildWinElement(actionRequest));
@@ -159,7 +162,6 @@ namespace WindowsAutomationPlugin.Controllers
         {
             logMessage("Info", String.Format("Received get element request: {0}, {1}", locatorType, locatorValue));
             Enum.TryParse(locatorType, out By by);
-            //TO-DO get native element properties and write to winelement class
             AutomationElement element = _executionEngine.FindElementByValues(by, locatorValue);
             if (element == null)
             {

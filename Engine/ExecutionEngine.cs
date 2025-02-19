@@ -217,15 +217,24 @@ namespace WindowsAutomationPlugin.Engine
             return new ResponseLog();
         }
 
-        public ResponseLog ClickAndDragToCoordinates()
+        public ResponseLog ClickAndDragToCoordinates(int x, int y)
         {
-            // Usage will be click on current pointer position and drag to coordinates
-            return new ResponseLog(Responses.ActionNotImplemented);
+            Mouse.Down();
+            Mouse.MoveTo(x, y);
+            Mouse.Up();
+            return new ResponseLog();
         }
 
         public ResponseLog ClickAndDragToElement(WinElement element)
         {
-            return new ResponseLog(Responses.ActionNotImplemented);
+            AutomationElement autEl = FindElement(element);
+            if (autEl != null)
+            {
+                int X = autEl.BoundingRectangle.X + (autEl.BoundingRectangle.Width / 2);
+                int Y = autEl.BoundingRectangle.Y + (autEl.BoundingRectangle.Height / 2);
+                return ClickAndDragToCoordinates(X, Y);
+            }
+            return new ResponseLog(Responses.ActionError);
         }
 
         public AutomationElement? FindElement(WinElement winElement)
