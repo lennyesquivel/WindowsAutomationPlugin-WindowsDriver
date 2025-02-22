@@ -38,8 +38,6 @@ namespace WindowsAutomationPlugin.Controllers
         private ResponseLog checkClientSessionId(String sessionIdFromReq)
         {
             string clientSessionId = HttpContext.Session.GetString("clientSessionId");
-            Console.WriteLine("Received request from clientSessionId: " + sessionIdFromReq);
-            Console.WriteLine("Comparing against: " + clientSessionId);
             if (clientSessionId == null)
             {
                 return new ResponseLog(Responses.SessionNotRegistered);
