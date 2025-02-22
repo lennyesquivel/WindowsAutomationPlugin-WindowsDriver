@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using FlaUI.Core.AutomationElements;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using WindowsAutomationPlugin.Engine;
 using WindowsAutomationPlugin.Models;
 using WindowsAutomationPlugin.Models.Enums;
@@ -34,10 +35,11 @@ namespace WindowsAutomationPlugin.Controllers
             _logger = logger;
         }
 
-        // TO-DO: Implement clientSessionId check at every request
         private ResponseLog checkClientSessionId(String sessionIdFromReq)
         {
             string clientSessionId = HttpContext.Session.GetString("clientSessionId");
+            Console.WriteLine("Received request from clientSessionId: " + sessionIdFromReq);
+            Console.WriteLine("Comparing against: " + clientSessionId);
             if (clientSessionId == null)
             {
                 return new ResponseLog(Responses.SessionNotRegistered);
@@ -52,6 +54,12 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpPost("driver")]
         public ResponseLog SetupDriver([FromBody] DriverOptions options)
         {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return clientSessionRes;
+            } 
             _executionEngine.setImplicitWaitTime(options.ImplicitWaitTime);
             Console.WriteLine(options.ToString());
             return new ResponseLog(Responses.Success);
@@ -64,6 +72,12 @@ namespace WindowsAutomationPlugin.Controllers
             {
                 logMessage("Error", String.Format("Invalid Request.\n{0}", ModelState));
                 return new ResponseLog(Responses.BadRequest);
+            }
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return clientSessionRes;
             }
             string clientSessionId = HttpContext.Session.GetString("clientSessionId");
             Console.WriteLine("Registered Client Session ID: " + clientSessionId);
@@ -160,6 +174,12 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpGet("element")]
         public WinElement GetElement(string locatorType, string locatorValue)
         {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return null;
+            }
             logMessage("Info", String.Format("Received get element request: {0}, {1}", locatorType, locatorValue));
             Enum.TryParse(locatorType, out By by);
             AutomationElement element = _executionEngine.FindElementByValues(by, locatorValue);
@@ -173,6 +193,12 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpGet("elements")]
         public List<WinElement> GetElements(ActionRequest actionRequest)
         {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return null;
+            }
             logMessage("Info", String.Format("Received get element request: {0}", actionRequest));
             return findElements(actionRequest);
         }
