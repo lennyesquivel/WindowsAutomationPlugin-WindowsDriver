@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using FlaUI.Core.AutomationElements;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using WindowsAutomationPlugin.Engine;
 using WindowsAutomationPlugin.Models;
 using WindowsAutomationPlugin.Models.Enums;
@@ -34,6 +35,34 @@ namespace WindowsAutomationPlugin.Controllers
             _logger = logger;
         }
 
+        private ResponseLog checkClientSessionId(String sessionIdFromReq)
+        {
+            string clientSessionId = HttpContext.Session.GetString("clientSessionId");
+            if (clientSessionId == null)
+            {
+                return new ResponseLog(Responses.SessionNotRegistered);
+            }
+            else if (clientSessionId != sessionIdFromReq)
+            {
+                return new ResponseLog(Responses.ClientIdMismatch);
+            }
+            return null;
+        }
+
+        [HttpPost("driver")]
+        public ResponseLog SetupDriver([FromBody] DriverOptions options)
+        {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return clientSessionRes;
+            } 
+            _executionEngine.setImplicitWaitTime(options.ImplicitWaitTime);
+            Console.WriteLine(options.ToString());
+            return new ResponseLog(Responses.Success);
+        }
+
         [HttpPost]
         public ResponseLog Post([FromBody] JsonObject requestBody)
         {
@@ -42,6 +71,14 @@ namespace WindowsAutomationPlugin.Controllers
                 logMessage("Error", String.Format("Invalid Request.\n{0}", ModelState));
                 return new ResponseLog(Responses.BadRequest);
             }
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return clientSessionRes;
+            }
+            string clientSessionId = HttpContext.Session.GetString("clientSessionId");
+            Console.WriteLine("Registered Client Session ID: " + clientSessionId);
             Console.WriteLine(requestBody.ToJsonString());
             ActionRequest actionRequest = new(requestBody);
             return HandleActionPost(actionRequest);
@@ -107,6 +144,23 @@ namespace WindowsAutomationPlugin.Controllers
                     int Y = int.Parse(coords.Split(",")[1]);
                     actionResult = _executionEngine.MoveMouseToPosition(X, Y);
                     break;
+                case Actions.KeyDown:
+                    Enum.TryParse(actionRequest.ActionValue, out FlaUI.Core.WindowsAPI.VirtualKeyShort keyDown);
+                    actionResult = _executionEngine.KeyDown(keyDown);
+                    break;
+                case Actions.KeyUp:
+                    Enum.TryParse(actionRequest.ActionValue, out FlaUI.Core.WindowsAPI.VirtualKeyShort keyUp);
+                    actionResult = _executionEngine.KeyUp(keyUp);
+                    break;
+                case Actions.ClickAndDragToCoordinates:
+                    string dragDropCoords = actionRequest.ActionValue.Substring(1, actionRequest.ActionValue.Length - 2);
+                    int dX = int.Parse(dragDropCoords.Split(",")[0]);
+                    int dY = int.Parse(dragDropCoords.Split(",")[1]);
+                    actionResult = _executionEngine.ClickAndDragToCoordinates(dX, dY);
+                    break;
+                case Actions.ClickAndDragToElement:
+                    actionResult = _executionEngine.ClickAndDragToElement(buildWinElement(actionRequest));
+                    break;
                 default:
                     actionResult = new ResponseLog(Responses.ActionNotImplemented);
                     break;
@@ -118,9 +172,14 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpGet("element")]
         public WinElement GetElement(string locatorType, string locatorValue)
         {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return null;
+            }
             logMessage("Info", String.Format("Received get element request: {0}, {1}", locatorType, locatorValue));
             Enum.TryParse(locatorType, out By by);
-            //TO-DO get native element properties and write to winelement class
             AutomationElement element = _executionEngine.FindElementByValues(by, locatorValue);
             if (element == null)
             {
@@ -132,6 +191,12 @@ namespace WindowsAutomationPlugin.Controllers
         [HttpGet("elements")]
         public List<WinElement> GetElements(ActionRequest actionRequest)
         {
+            Request.Headers.TryGetValue("clientSessionId", out StringValues clientId);
+            ResponseLog clientSessionRes = checkClientSessionId(clientId);
+            if (clientSessionRes != null)
+            {
+                return null;
+            }
             logMessage("Info", String.Format("Received get element request: {0}", actionRequest));
             return findElements(actionRequest);
         }
